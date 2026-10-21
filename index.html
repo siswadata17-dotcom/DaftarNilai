@@ -1,1 +1,1240 @@
-hello
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daftar Nilai - SMKN 1 GONDANG</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 15px; font-size: 13px; }
+    .container { max-width: 1300px; margin: 0 auto; background: #fff; padding: 20px; border: 1px solid #ddd; }
+
+    .header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 12px; margin-bottom: 15px; }
+    .header h1 { font-size: 18px; font-weight: bold; letter-spacing: 1px; }
+    .header p { font-size: 13px; margin-top: 4px; }
+
+    .semester-row, .tahun-row { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; }
+    .semester-row input, .tahun-row input {
+        text-align: center; font-size: 13px; font-weight: bold;
+        border: none; border-bottom: 1px dotted #888; background: transparent;
+        padding: 3px 5px; outline: none;
+    }
+    .semester-row input { width: 220px; }
+    .tahun-row input { width: 130px; }
+    .semester-row input:focus, .tahun-row input:focus { background: #fffde7; border-bottom: 1px solid #333; }
+
+    .info-row { display: grid; grid-template-columns: 1.5fr 0.6fr 1.2fr; gap: 10px; margin-bottom: 15px; font-size: 12px; }
+    .info-row > div { display: flex; align-items: center; gap: 6px; }
+    .info-row label { font-weight: bold; white-space: nowrap; }
+    .info-row input, .info-row select {
+        border: none; border-bottom: 1px dotted #999; outline: none;
+        padding: 3px 5px; width: 100%; font-size: 12px; background: transparent;
+        font-family: inherit;
+    }
+    .info-row select { cursor: pointer; }
+
+    .mapel-wrapper { display: flex; align-items: center; gap: 4px; flex: 1; }
+    .mapel-wrapper select { flex: 1; }
+    .btn-manage-mapel {
+        padding: 3px 8px; font-size: 11px; background: #3498db; color: white;
+        border: none; border-radius: 3px; cursor: pointer; white-space: nowrap;
+    }
+    .btn-manage-mapel:hover { background: #2980b9; }
+
+    .tabs { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 12px; border-bottom: 1px solid #ccc; padding-bottom: 8px; align-items: center; }
+    .tab-btn { padding: 6px 12px; background: #f0f0f0; border: 1px solid #ccc; cursor: pointer; font-size: 11px; border-radius: 3px 3px 0 0; }
+    .tab-btn.active { background: #333; color: white; border-color: #333; }
+    .tab-btn:hover:not(.active) { background: #e0e0e0; }
+    .btn-manage-class {
+        padding: 5px 10px; font-size: 11px; background: #16a085; color: white;
+        border: none; border-radius: 3px; cursor: pointer; margin-left: auto;
+    }
+    .btn-manage-class:hover { background: #138d75; }
+
+    .class-name-edit { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 12px; flex-wrap: wrap; }
+    .class-name-edit input { border: 1px solid #ccc; padding: 4px 8px; font-size: 12px; width: 220px; }
+    .excel-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+    .excel-btns button { padding: 5px 10px; font-size: 11px; border-radius: 3px; border: none; color: white; cursor: pointer; }
+    .btn-template { background: #3498db; } .btn-template:hover { background: #2980b9; }
+    .btn-import { background: #27ae60; } .btn-import:hover { background: #229954; }
+    .btn-export { background: #e67e22; } .btn-export:hover { background: #d35400; }
+
+    .bulk-excel {
+        display: flex; gap: 8px; margin-bottom: 12px; padding: 10px;
+        background: #eef6ff; border: 1px dashed #3498db; border-radius: 4px;
+        align-items: center; flex-wrap: wrap; font-size: 12px;
+    }
+    .bulk-excel strong { color: #2c3e50; }
+    .bulk-excel button { padding: 6px 12px; font-size: 11px; border-radius: 3px; border: none; color: white; cursor: pointer; }
+
+    .class-print-title { font-weight: bold; font-size: 12px; margin-bottom: 8px; }
+    .print-only { display: none; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th, td { border: 1px solid #999; padding: 5px; text-align: center; }
+    th { background: #f8f8f8; font-weight: bold; font-size: 11px; }
+    td input { width: 100%; border: none; text-align: center; background: transparent; font-size: 11px; outline: none; padding: 2px; }
+    td input:focus { background: #ffffcc; }
+    .nama-input { text-align: left !important; }
+    .auto-calc { background: #f0f8ff; font-weight: bold; }
+    .final-grade { background: #e8f5e9; font-weight: bold; }
+    .ket-cell { font-size: 10px; font-weight: bold; padding: 3px 5px; white-space: nowrap; }
+    .ket-tuntas { background: #d4edda !important; color: #155724; }
+    .ket-belum { background: #f8d7da !important; color: #721c24; }
+    .ket-default { background: #f5f5f5 !important; color: #888; }
+
+    .btn-container { margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    button { padding: 8px 14px; color: white; border: none; cursor: pointer; font-size: 12px; border-radius: 3px; }
+    .btn-print { background: #333; } .btn-print:hover { background: #555; }
+    .btn-backup { background: #2980b9; } .btn-backup:hover { background: #3498db; }
+    .btn-restore { background: #7f8c8d; } .btn-restore:hover { background: #95a5a6; }
+    .btn-reset { background: #c0392b; } .btn-reset:hover { background: #e74c3c; }
+    .save-status { font-size: 11px; color: #27ae60; font-style: italic; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: white; padding: 25px; border-radius: 5px; max-width: 540px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,.2); max-height: 85vh; overflow-y: auto; }
+    .modal h3 { margin-bottom: 12px; color: #c0392b; }
+    .modal p { margin-bottom: 12px; font-size: 13px; line-height: 1.6; }
+    .modal-field { margin: 12px 0; }
+    .modal-field label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 5px; }
+    .modal-field input, .modal-field select { width: 100%; padding: 7px; border: 1px solid #ccc; font-size: 13px; }
+    .modal-hint { font-size: 11px; color: #777; margin-top: 4px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 15px; }
+    .btn-cancel { background: #95a5a6; }
+
+    /* Modal Kelola Mapel */
+    .mapel-list, .class-list { margin: 15px 0; border: 1px solid #eee; border-radius: 4px; }
+    .mapel-item, .class-item {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 10px; border-bottom: 1px solid #eee;
+        font-size: 13px;
+    }
+    .mapel-item:last-child, .class-item:last-child { border-bottom: none; }
+    .mapel-item .mapel-name, .class-item .class-name { flex: 1; }
+    .mapel-item .mapel-name input, .class-item .class-name input {
+        width: 100%; padding: 5px 8px; border: 1px solid #3498db;
+        border-radius: 3px; font-size: 13px;
+    }
+    .class-item .class-name input { border-color: #16a085; }
+    .mapel-item .mapel-actions, .class-item .class-actions { display: flex; gap: 4px; }
+    .mapel-item button, .class-item button {
+        padding: 4px 8px; font-size: 11px; border-radius: 3px;
+        border: none; color: white; cursor: pointer;
+    }
+    .btn-edit-mapel, .btn-edit-class { background: #f39c12; }
+    .btn-edit-mapel:hover, .btn-edit-class:hover { background: #e67e22; }
+    .btn-save-mapel, .btn-save-class { background: #27ae60; }
+    .btn-save-mapel:hover, .btn-save-class:hover { background: #229954; }
+    .btn-cancel-edit { background: #95a5a6; }
+    .btn-delete-mapel, .btn-delete-class { background: #c0392b; }
+    .btn-delete-mapel:hover, .btn-delete-class:hover { background: #e74c3c; }
+    .mapel-empty, .class-empty { padding: 20px; text-align: center; color: #888; font-size: 12px; }
+
+    .add-mapel-form, .add-class-form {
+        display: flex; gap: 6px; margin-top: 10px;
+        padding-top: 10px; border-top: 1px dashed #ccc;
+    }
+    .add-mapel-form input, .add-class-form input { flex: 1; padding: 7px; border: 1px solid #ccc; font-size: 13px; }
+    .add-mapel-form button { padding: 7px 14px; background: #27ae60; }
+    .add-mapel-form button:hover { background: #229954; }
+    .add-class-form button { padding: 7px 14px; background: #16a085; }
+    .add-class-form button:hover { background: #138d75; }
+
+    .class-count-info {
+        background: #e8f6f3; padding: 8px 12px; border-radius: 4px;
+        font-size: 12px; color: #138d75; margin-bottom: 10px;
+    }
+
+    .mapping-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 12px; }
+    .mapping-row select { flex: 1; padding: 5px; }
+    .mapping-row .sheet-name { background: #f0f0f0; padding: 5px 8px; border-radius: 3px; min-width: 120px; }
+
+    @media print {
+        body { background: white; padding: 0; }
+        .container { border: none; padding: 0; max-width: 100%; }
+        .no-print { display: none !important; }
+        .print-only { display: inline; }
+        .class-print-title { display: block; }
+        .info-row input, .info-row select { border-bottom: none; }
+        td input { border: none; }
+        .auto-calc, .final-grade { background: transparent !important; }
+        th { background: #eee !important; -webkit-print-color-adjust: exact; }
+        .ket-tuntas, .ket-belum { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>DAFTAR NILAI</h1>
+        <input type="text" id="semester" class="no-print" value="Semester Gasal" oninput="onSemesterInput()">
+        <strong class="print-only" id="printSemester">Semester Gasal</strong>
+        <p>SMKN 1 GONDANG</p>
+        <div class="tahun-row">
+            <span>Tahun Pelajaran:</span>
+            <input type="text" id="tahun" class="no-print" value="2026/2027" oninput="onTahunInput()">
+            <strong class="print-only" id="printTahun">2026/2027</strong>
+        </div>
+    </div>
+
+    <div class="info-row">
+        <div>
+            <label>Mata Pelajaran:</label>
+            <div class="mapel-wrapper">
+                <select id="mapel" onchange="autoSave()"></select>
+                <button class="btn-manage-mapel no-print" onclick="openMapelManager()">⚙️ Kelola</button>
+            </div>
+        </div>
+        <div>
+            <label>KKTP:</label>
+            <select id="kktp" onchange="onKktpChange()">
+                <option value="70">70</option><option value="71">71</option><option value="72">72</option>
+                <option value="73">73</option><option value="74">74</option><option value="75" selected>75</option>
+                <option value="76">76</option><option value="77">77</option><option value="78">78</option>
+                <option value="79">79</option><option value="80">80</option>
+            </select>
+        </div>
+        <div><label>Guru Pengampu:</label><input type="text" id="guru" value="[Nama Anda, S.Pd.]" oninput="autoSave()"></div>
+    </div>
+
+    <div class="bulk-excel no-print">
+        <strong>📊 Sinkron Data Siswa Semua Kelas:</strong>
+        <button class="btn-template" onclick="downloadTemplateAll()">📋 Download Template</button>
+        <button class="btn-import" onclick="document.getElementById('excelFileAll').click()">📥 Import Semua Kelas</button>
+        <input type="file" id="excelFileAll" style="display:none" accept=".xlsx,.xls" onchange="importExcelAll(event)">
+    </div>
+
+    <div class="tabs no-print" id="tabs"></div>
+
+    <div class="class-print-title print-only">Kelas: <span id="printClassName"></span></div>
+    <div id="class-content"></div>
+
+    <div class="btn-container no-print">
+        <div class="btn-group">
+            <button class="btn-print" onclick="printCurrentClass()">🖨️ Cetak Kelas Ini</button>
+            <button class="btn-print" onclick="printAllClasses()">🖨️ Cetak Semua Kelas</button>
+        </div>
+        <div class="btn-group">
+            <button class="btn-backup" onclick="backupData()">💾 Backup</button>
+            <button class="btn-restore" onclick="document.getElementById('restoreFile').click()">📂 Restore</button>
+            <input type="file" id="restoreFile" style="display:none" accept=".json" onchange="restoreData(event)">
+            <button class="btn-reset" onclick="showResetModal()">🗑️ Reset Data</button>
+            <span class="save-status" id="saveStatus">✓ Tersimpan</span>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="excelFile" style="display:none" accept=".xlsx,.xls,.csv" onchange="importExcel(event)">
+
+<!-- Modal Kelola Kelas -->
+<div class="modal-overlay" id="classModal">
+    <div class="modal">
+        <h3>🏫 Kelola Kelas</h3>
+        <p>Tambah, edit, atau hapus kelas. Perubahan berlaku untuk data yang tersimpan.</p>
+        <div class="class-count-info" id="classCountInfo">Total kelas: 0</div>
+        <div class="class-list" id="classList"></div>
+        <div class="add-class-form">
+            <input type="text" id="newClassName" placeholder="Nama kelas baru (mis. X RPL 3)..." maxlength="50"
+                   onkeydown="if(event.key==='Enter')addClass();">
+            <button onclick="addClass()">+ Tambah Kelas</button>
+        </div>
+        <div class="modal-hint">💡 Minimal harus ada 1 kelas. Data nilai di kelas yang dihapus akan ikut terhapus.</div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeClassManager()">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Kelola Mapel -->
+<div class="modal-overlay" id="mapelModal">
+    <div class="modal">
+        <h3>📚 Kelola Mata Pelajaran</h3>
+        <p>Tambah, edit, atau hapus mata pelajaran. Perubahan berlaku untuk semua data.</p>
+        <div class="mapel-list" id="mapelList"></div>
+        <div class="add-mapel-form">
+            <input type="text" id="newMapelName" placeholder="Nama mata pelajaran baru..." maxlength="50"
+                   onkeydown="if(event.key==='Enter')addMapel();">
+            <button onclick="addMapel()">+ Tambah</button>
+        </div>
+        <div class="modal-hint">💡 Minimal harus ada 1 mata pelajaran. Nama tidak boleh duplikat.</div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeMapelManager()">Tutup</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Reset -->
+<div class="modal-overlay" id="resetModal">
+    <div class="modal">
+        <h3>⚠️ Reset untuk Periode Baru</h3>
+        <p>Semua <strong>nilai dan nama siswa</strong> akan dikosongkan. <strong>Tindakan ini tidak bisa dibatalkan.</strong> Sebaiknya Backup dulu.</p>
+        <div class="modal-field">
+            <label for="newMapelReset">Mata Pelajaran Baru:</label>
+            <select id="newMapelReset"></select>
+        </div>
+        <div class="modal-field">
+            <label for="newKktp">KKTP Baru:</label>
+            <select id="newKktp">
+                <option value="70">70</option><option value="71">71</option><option value="72">72</option>
+                <option value="73">73</option><option value="74">74</option><option value="75" selected>75</option>
+                <option value="76">76</option><option value="77">77</option><option value="78">78</option>
+                <option value="79">79</option><option value="80">80</option>
+            </select>
+        </div>
+        <div class="modal-field">
+            <label for="newSemester">Semester Baru:</label>
+            <input type="text" id="newSemester" placeholder="mis. Semester Genap">
+        </div>
+        <div class="modal-field">
+            <label for="newTahun">Tahun Pelajaran Baru:</label>
+            <input type="text" id="newTahun" placeholder="mis. 2027/2028">
+        </div>
+        <div class="modal-field">
+            <label for="newClassCount">Jumlah Kelas Awal:</label>
+            <input type="number" id="newClassCount" min="1" max="50" value="10">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeResetModal()">Batal</button>
+            <button class="btn-reset" onclick="resetAllData()">Ya, Reset</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Mapping Sheet -->
+<div class="modal-overlay" id="mappingModal">
+    <div class="modal">
+        <h3>🔗 Cocokkan Sheet Excel dengan Kelas</h3>
+        <p>Pilih kelas tujuan untuk setiap sheet di file Excel Anda:</p>
+        <div id="mappingList"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeMappingModal()">Batal</button>
+            <button class="btn-import" onclick="confirmMapping()">Import Sekarang</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const STORAGE_KEY = 'smkn1gondang_nilai_data';
+    const MAPEL_STORAGE_KEY = 'smkn1gondang_mapel_list';
+    const DEFAULT_CLASS_COUNT = 10;
+    const totalSiswa = 36;
+    let currentClass = 0;
+    let classData = [];
+    let mapelList = [];
+    let saveTimeout = null;
+    let pendingWorkbook = null;
+
+    function esc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, c =>
+            ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function initEmptyData(count = DEFAULT_CLASS_COUNT) {
+        classData = [];
+        for (let i = 0; i < count; i++) {
+            classData.push({ name: `Kelas ${i + 1}`, students: [] });
+        }
+    }
+
+    // ===== MANAJEMEN KELAS =====
+    function openClassManager() {
+        renderClassManagerList();
+        document.getElementById('newClassName').value = '';
+        document.getElementById('classModal').classList.add('active');
+    }
+
+    function closeClassManager() {
+        document.getElementById('classModal').classList.remove('active');
+    }
+
+    function updateClassCountInfo() {
+        document.getElementById('classCountInfo').innerText = `Total kelas: ${classData.length}`;
+    }
+
+    function renderClassManagerList() {
+        updateClassCountInfo();
+        const list = document.getElementById('classList');
+        if (classData.length === 0) {
+            list.innerHTML = '<div class="class-empty">Belum ada kelas. Tambahkan di bawah.</div>';
+            return;
+        }
+        list.innerHTML = classData.map((c, idx) => `
+            <div class="class-item" data-idx="${idx}">
+                <span class="class-name">${esc(c.name)}</span>
+                <div class="class-actions">
+                    <button class="btn-edit-class" onclick="startEditClass(${idx})">✏️ Edit</button>
+                    <button class="btn-delete-class" onclick="deleteClass(${idx})">🗑️ Hapus</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function startEditClass(idx) {
+        const c = classData[idx];
+        if (!c) return;
+        const item = document.querySelector(`.class-item[data-idx="${idx}"]`);
+        item.innerHTML = `
+            <span class="class-name">
+                <input type="text" id="editClassInput-${idx}" value="${esc(c.name)}" maxlength="50"
+                       onkeydown="if(event.key==='Enter')saveEditClass(${idx});if(event.key==='Escape')renderClassManagerList();">
+            </span>
+            <div class="class-actions">
+                <button class="btn-save-class" onclick="saveEditClass(${idx})">💾 Simpan</button>
+                <button class="btn-cancel-edit" onclick="renderClassManagerList()">Batal</button>
+            </div>
+        `;
+        const inp = document.getElementById(`editClassInput-${idx}`);
+        inp.focus();
+        inp.select();
+    }
+
+    function saveEditClass(idx) {
+        const inp = document.getElementById(`editClassInput-${idx}`);
+        const newName = inp.value.trim();
+        if (newName === '') {
+            alert('Nama kelas tidak boleh kosong.');
+            return;
+        }
+        classData[idx].name = newName;
+        autoSave();
+        renderClassManagerList();
+        buildTabs();
+        // Update tab name & print info jika kelas yang diedit sedang aktif
+        if (idx === currentClass) {
+            document.getElementById('printClassName').innerText = newName;
+        }
+    }
+
+    function deleteClass(idx) {
+        if (classData.length === 1) {
+            alert('Tidak bisa menghapus. Minimal harus ada 1 kelas.');
+            return;
+        }
+        const c = classData[idx];
+        const studentCount = c.students.filter(s => s && s.name && !s.name.startsWith('Siswa ')).length;
+        let msg = `Hapus kelas "${c.name}"?`;
+        if (studentCount > 0) {
+            msg += `\n\n⚠️ Kelas ini memiliki ${studentCount} siswa dengan data nilai. SEMUA data nilai di kelas ini akan ikut terhapus.`;
+        }
+        msg += `\n\nTindakan ini tidak bisa dibatalkan.`;
+        if (!confirm(msg)) return;
+
+        classData.splice(idx, 1);
+        // Sesuaikan currentClass
+        if (currentClass >= classData.length) {
+            currentClass = classData.length - 1;
+        } else if (currentClass > idx) {
+            currentClass--;
+        } else if (currentClass === idx) {
+            // Kelas aktif yang dihapus, pindah ke kelas terdekat
+            if (currentClass >= classData.length) currentClass = classData.length - 1;
+        }
+
+        autoSave();
+        renderClassManagerList();
+        buildTabs();
+        renderClass();
+    }
+
+    function addClass() {
+        const inp = document.getElementById('newClassName');
+        const name = inp.value.trim();
+        if (name === '') {
+            alert('Nama kelas tidak boleh kosong.');
+            return;
+        }
+        classData.push({ name: name, students: [] });
+        autoSave();
+        inp.value = '';
+        renderClassManagerList();
+        buildTabs();
+        // Pindah ke kelas baru
+        currentClass = classData.length - 1;
+        document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === currentClass));
+        renderClass();
+    }
+
+    // ===== MANAJEMEN MAPEL =====
+    const DEFAULT_MAPEL = [
+        { id: 1, name: 'Matematika' },
+        { id: 2, name: 'Bahasa Indonesia' },
+        { id: 3, name: 'Bahasa Inggris' }
+    ];
+
+    function loadMapelList() {
+        const saved = localStorage.getItem(MAPEL_STORAGE_KEY);
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    mapelList = parsed;
+                    return;
+                }
+            } catch (e) {}
+        }
+        mapelList = JSON.parse(JSON.stringify(DEFAULT_MAPEL));
+        saveMapelList();
+    }
+
+    function saveMapelList() {
+        localStorage.setItem(MAPEL_STORAGE_KEY, JSON.stringify(mapelList));
+    }
+
+    function getNextId() {
+        return mapelList.length === 0 ? 1 : Math.max(...mapelList.map(m => m.id)) + 1;
+    }
+
+    function renderMapelDropdown() {
+        const sel = document.getElementById('mapel');
+        const currentVal = sel.value;
+        sel.innerHTML = mapelList.map(m =>
+            `<option value="${m.id}">${esc(m.name)}</option>`
+        ).join('');
+        if (mapelList.some(m => String(m.id) === String(currentVal))) {
+            sel.value = currentVal;
+        } else if (mapelList.length > 0) {
+            sel.value = mapelList[0].id;
+        }
+    }
+
+    function getMapelNameById(id) {
+        const m = mapelList.find(x => String(x.id) === String(id));
+        return m ? m.name : '';
+    }
+
+    function openMapelManager() {
+        renderMapelManagerList();
+        document.getElementById('newMapelName').value = '';
+        document.getElementById('mapelModal').classList.add('active');
+    }
+
+    function closeMapelManager() {
+        document.getElementById('mapelModal').classList.remove('active');
+    }
+
+    function renderMapelManagerList() {
+        const list = document.getElementById('mapelList');
+        if (mapelList.length === 0) {
+            list.innerHTML = '<div class="mapel-empty">Belum ada mata pelajaran. Tambahkan di bawah.</div>';
+            return;
+        }
+        list.innerHTML = mapelList.map(m => `
+            <div class="mapel-item" data-id="${m.id}">
+                <span class="mapel-name">${esc(m.name)}</span>
+                <div class="mapel-actions">
+                    <button class="btn-edit-mapel" onclick="startEditMapel(${m.id})">✏️ Edit</button>
+                    <button class="btn-delete-mapel" onclick="deleteMapel(${m.id})">🗑️ Hapus</button>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function startEditMapel(id) {
+        const m = mapelList.find(x => x.id === id);
+        if (!m) return;
+        const item = document.querySelector(`.mapel-item[data-id="${id}"]`);
+        item.innerHTML = `
+            <span class="mapel-name">
+                <input type="text" id="editInput-${id}" value="${esc(m.name)}" maxlength="50"
+                       onkeydown="if(event.key==='Enter')saveEditMapel(${id});if(event.key==='Escape')renderMapelManagerList();">
+            </span>
+            <div class="mapel-actions">
+                <button class="btn-save-mapel" onclick="saveEditMapel(${id})">💾 Simpan</button>
+                <button class="btn-cancel-edit" onclick="renderMapelManagerList()">Batal</button>
+            </div>
+        `;
+        const inp = document.getElementById(`editInput-${id}`);
+        inp.focus();
+        inp.select();
+    }
+
+    function saveEditMapel(id) {
+        const inp = document.getElementById(`editInput-${id}`);
+        const newName = inp.value.trim();
+        if (newName === '') { alert('Nama mata pelajaran tidak boleh kosong.'); return; }
+        if (mapelList.some(m => m.id !== id && m.name.toLowerCase() === newName.toLowerCase())) {
+            alert('Nama mata pelajaran sudah ada.'); return;
+        }
+        const m = mapelList.find(x => x.id === id);
+        m.name = newName;
+        saveMapelList();
+        renderMapelManagerList();
+        renderMapelDropdown();
+        autoSave();
+    }
+
+    function deleteMapel(id) {
+        if (mapelList.length === 1) { alert('Tidak bisa menghapus. Minimal harus ada 1 mata pelajaran.'); return; }
+        const m = mapelList.find(x => x.id === id);
+        if (!confirm(`Hapus mata pelajaran "${m.name}"?`)) return;
+        const wasSelected = String(document.getElementById('mapel').value) === String(id);
+        mapelList = mapelList.filter(x => x.id !== id);
+        saveMapelList();
+        renderMapelManagerList();
+        renderMapelDropdown();
+        if (wasSelected && mapelList.length > 0) {
+            document.getElementById('mapel').value = mapelList[0].id;
+        }
+        autoSave();
+    }
+
+    function addMapel() {
+        const inp = document.getElementById('newMapelName');
+        const name = inp.value.trim();
+        if (name === '') { alert('Nama mata pelajaran tidak boleh kosong.'); return; }
+        if (mapelList.some(m => m.name.toLowerCase() === name.toLowerCase())) {
+            alert('Nama mata pelajaran sudah ada.'); return;
+        }
+        mapelList.push({ id: getNextId(), name: name });
+        saveMapelList();
+        inp.value = '';
+        renderMapelManagerList();
+        renderMapelDropdown();
+        document.getElementById('mapel').value = mapelList[mapelList.length - 1].id;
+        autoSave();
+    }
+
+    // ===== SIMPAN / MUAT DATA =====
+    function loadData() {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+            try {
+                const p = JSON.parse(saved);
+                classData = p.classData || [];
+                if (classData.length === 0) initEmptyData();
+                setMapelValue(p.mapel);
+                setKktpValue(p.kktp ?? 75);
+                document.getElementById('guru').value = p.guru ?? '[Nama Anda, S.Pd.]';
+                document.getElementById('semester').value = p.semester ?? 'Semester Gasal';
+                document.getElementById('tahun').value = p.tahun ?? '2026/2027';
+            } catch (e) {
+                initEmptyData();
+                setDefaultSelections();
+            }
+        } else {
+            initEmptyData();
+            setDefaultSelections();
+        }
+        syncPrintInfo();
+    }
+
+    function setDefaultSelections() {
+        if (mapelList.length > 0) document.getElementById('mapel').value = mapelList[0].id;
+        setKktpValue(75);
+        document.getElementById('guru').value = '[Nama Anda, S.Pd.]';
+        document.getElementById('semester').value = 'Semester Gasal';
+        document.getElementById('tahun').value = '2026/2027';
+    }
+
+    function setMapelValue(val) {
+        const sel = document.getElementById('mapel');
+        if (val === undefined || val === null || val === '') {
+            if (mapelList.length > 0) sel.value = mapelList[0].id;
+            return;
+        }
+        if (mapelList.some(m => String(m.id) === String(val))) {
+            sel.value = val; return;
+        }
+        const found = mapelList.find(m => m.name.toLowerCase() === String(val).toLowerCase());
+        if (found) sel.value = found.id;
+        else if (mapelList.length > 0) sel.value = mapelList[0].id;
+    }
+
+    function setKktpValue(val) {
+        const sel = document.getElementById('kktp');
+        const v = String(val);
+        const opts = Array.from(sel.options).map(o => o.value);
+        sel.value = opts.includes(v) ? v : '75';
+    }
+
+    function saveData() {
+        const data = {
+            mapel: document.getElementById('mapel').value,
+            kktp: document.getElementById('kktp').value,
+            guru: document.getElementById('guru').value,
+            semester: document.getElementById('semester').value,
+            tahun: document.getElementById('tahun').value,
+            classData: classData
+        };
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            document.getElementById('saveStatus').innerText = '✓ Tersimpan';
+        } catch (e) {
+            document.getElementById('saveStatus').innerText = '✗ Gagal menyimpan';
+        }
+    }
+
+    function autoSave() {
+        clearTimeout(saveTimeout);
+        document.getElementById('saveStatus').innerText = '⏳ Menyimpan...';
+        saveTimeout = setTimeout(() => {
+            saveCurrentClassData();
+            saveData();
+        }, 400);
+    }
+
+    function onSemesterInput() { syncPrintInfo(); autoSave(); }
+    function onTahunInput() { syncPrintInfo(); autoSave(); }
+    function onKktpChange() { autoSave(); recalcAllRows(); }
+
+    function recalcAllRows() {
+        document.querySelectorAll('#class-content tbody tr').forEach(row => {
+            const firstInput = row.querySelector('.uh');
+            if (firstInput) calculateRow(firstInput);
+        });
+    }
+
+    function syncPrintInfo() {
+        document.getElementById('printSemester').innerText =
+            document.getElementById('semester').value.trim() || '(belum diisi)';
+        document.getElementById('printTahun').innerText =
+            document.getElementById('tahun').value.trim() || '(belum diisi)';
+        const nameEl = document.getElementById('printClassName');
+        if (nameEl && classData[currentClass]) nameEl.innerText = classData[currentClass].name;
+    }
+
+    // ===== TAB KELAS =====
+    function buildTabs() {
+        const c = document.getElementById('tabs');
+        c.innerHTML = '';
+        for (let i = 0; i < classData.length; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'tab-btn' + (i === currentClass ? ' active' : '');
+            btn.innerText = classData[i].name;
+            btn.onclick = () => switchClass(i);
+            c.appendChild(btn);
+        }
+        // Tombol Kelola Kelas di ujung kanan tab
+        const manageBtn = document.createElement('button');
+        manageBtn.className = 'btn-manage-class';
+        manageBtn.innerText = '⚙️ Kelola Kelas';
+        manageBtn.onclick = openClassManager;
+        c.appendChild(manageBtn);
+    }
+
+    function switchClass(index) {
+        saveCurrentClassData();
+        currentClass = index;
+        document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === index));
+        renderClass();
+    }
+
+    function saveCurrentClassData() {
+        const content = document.getElementById('class-content');
+        if (!content.querySelector('table')) return;
+
+        const nameInput = content.querySelector('.class-name-input');
+        if (nameInput) {
+            classData[currentClass].name = nameInput.value;
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            if (tabBtns[currentClass]) tabBtns[currentClass].innerText = nameInput.value;
+        }
+
+        classData[currentClass].students = [];
+        content.querySelectorAll('tbody tr').forEach(row => {
+            const inp = row.querySelectorAll('input');
+            classData[currentClass].students.push({
+                name: inp[0].value,
+                uh: [inp[1].value, inp[2].value, inp[3].value],
+                tugas: [inp[4].value, inp[5].value],
+                semester: inp[6].value
+            });
+        });
+    }
+
+    function renderClass() {
+        if (classData.length === 0) {
+            document.getElementById('class-content').innerHTML =
+                '<div style="padding:30px;text-align:center;color:#888;">Belum ada kelas. Klik "⚙️ Kelola Kelas" untuk menambahkan.</div>';
+            return;
+        }
+        const data = classData[currentClass];
+        let html = `
+            <div class="class-name-edit no-print">
+                <label>Nama Kelas:</label>
+                <input type="text" class="class-name-input" value="${esc(data.name)}" oninput="updateTabName(this.value)">
+                <div class="excel-btns">
+                    <button class="btn-template" onclick="downloadTemplate()">📋 Template</button>
+                    <button class="btn-import" onclick="document.getElementById('excelFile').click()">📥 Import</button>
+                    <button class="btn-export" onclick="exportExcel()">💾 Export</button>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th rowspan="2">No</th><th rowspan="2">Nama Siswa</th>
+                        <th colspan="3">Ulangan Harian</th><th rowspan="2">Rata UH</th>
+                        <th colspan="2">Tugas</th><th rowspan="2">Rata Tugas</th>
+                        <th rowspan="2">Semester</th><th rowspan="2">Nilai Akhir</th>
+                        <th rowspan="2">Keterangan</th>
+                    </tr>
+                    <tr><th>1</th><th>2</th><th>3</th><th>1</th><th>2</th></tr>
+                </thead>
+                <tbody>`;
+
+        for (let i = 0; i < totalSiswa; i++) {
+            const s = data.students[i] || { name: `Siswa ${i + 1}`, uh: ['','',''], tugas: ['',''], semester: '' };
+            html += `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td><input type="text" class="nama-input" value="${esc(s.name)}" oninput="autoSave()"></td>
+                    <td><input type="number" class="uh" min="0" max="100" value="${esc(s.uh[0])}" oninput="calculateRow(this)"></td>
+                    <td><input type="number" class="uh" min="0" max="100" value="${esc(s.uh[1])}" oninput="calculateRow(this)"></td>
+                    <td><input type="number" class="uh" min="0" max="100" value="${esc(s.uh[2])}" oninput="calculateRow(this)"></td>
+                    <td class="auto-calc avg-uh">0.00</td>
+                    <td><input type="number" class="tugas" min="0" max="100" value="${esc(s.tugas[0])}" oninput="calculateRow(this)"></td>
+                    <td><input type="number" class="tugas" min="0" max="100" value="${esc(s.tugas[1])}" oninput="calculateRow(this)"></td>
+                    <td class="auto-calc avg-tugas">0.00</td>
+                    <td><input type="number" class="semester" min="0" max="100" value="${esc(s.semester)}" oninput="calculateRow(this)"></td>
+                    <td class="final-grade">0.00</td>
+                    <td class="ket-cell ket-default">-</td>
+                </tr>`;
+        }
+
+        html += '</tbody></table>';
+        document.getElementById('class-content').innerHTML = html;
+        recalcAllRows();
+        syncPrintInfo();
+    }
+
+    function updateTabName(name) {
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        if (tabBtns[currentClass]) tabBtns[currentClass].innerText = name;
+        document.getElementById('printClassName').innerText = name;
+        autoSave();
+    }
+
+    function calculateRow(el) {
+        const row = el.closest('tr');
+        let sumUH = 0, nUH = 0, sumT = 0, nT = 0;
+
+        row.querySelectorAll('.uh').forEach(i => { if (i.value !== '') { sumUH += parseFloat(i.value); nUH++; } });
+        row.querySelectorAll('.tugas').forEach(i => { if (i.value !== '') { sumT += parseFloat(i.value); nT++; } });
+
+        const avgUH = nUH ? sumUH / nUH : 0;
+        const avgT = nT ? sumT / nT : 0;
+        const semEl = row.querySelector('.semester');
+        const sem = semEl.value !== '' ? parseFloat(semEl.value) : 0;
+        const na = (avgUH + avgT + sem) / 3;
+
+        row.querySelector('.avg-uh').innerText = avgUH.toFixed(2);
+        row.querySelector('.avg-tugas').innerText = avgT.toFixed(2);
+        row.querySelector('.final-grade').innerText = na.toFixed(2);
+
+        const kktp = parseFloat(document.getElementById('kktp').value);
+        const ketCell = row.querySelector('.ket-cell');
+        const adaNilai = nUH > 0 || nT > 0 || semEl.value !== '';
+
+        if (!adaNilai) {
+            ketCell.innerText = '-';
+            ketCell.className = 'ket-cell ket-default';
+        } else if (na < kktp) {
+            ketCell.innerText = 'Belum Tuntas';
+            ketCell.className = 'ket-cell ket-belum';
+        } else {
+            ketCell.innerText = 'Tuntas';
+            ketCell.className = 'ket-cell ket-tuntas';
+        }
+        autoSave();
+    }
+
+    // ===== FITUR EXCEL =====
+    function checkXLSX() {
+        if (typeof XLSX === 'undefined') {
+            alert('⚠️ Library Excel belum termuat.\nPastikan koneksi internet aktif, lalu refresh halaman.');
+            return false;
+        }
+        return true;
+    }
+
+    function extractNamesFromSheet(rows) {
+        if (rows.length === 0) return [];
+        let startIdx = 0;
+        const firstRow = rows[0].map(c => String(c).trim().toLowerCase());
+        if (firstRow.some(c => ['no', 'no.', 'nama', 'nama siswa', 'name'].includes(c))) startIdx = 1;
+        const names = [];
+        for (let i = startIdx; i < rows.length; i++) {
+            const row = rows[i];
+            let name = '';
+            if (row.length > 1 && String(row[1]).trim() !== '') name = String(row[1]).trim();
+            else if (row.length > 0) {
+                const cellA = String(row[0]).trim();
+                if (cellA !== '' && isNaN(cellA)) name = cellA;
+            }
+            if (name !== '') names.push(name);
+        }
+        return names;
+    }
+
+    function applyNamesToClass(classIndex, names) {
+        const limit = Math.min(names.length, totalSiswa);
+        for (let i = 0; i < limit; i++) {
+            if (!classData[classIndex].students[i]) {
+                classData[classIndex].students[i] = {
+                    name: `Siswa ${i + 1}`, uh: ['', '', ''], tugas: ['', ''], semester: ''
+                };
+            }
+            classData[classIndex].students[i].name = names[i];
+        }
+        return limit;
+    }
+
+    function downloadTemplate() {
+        if (!checkXLSX()) return;
+        const wsData = [['No', 'Nama Siswa']];
+        for (let i = 1; i <= totalSiswa; i++) wsData.push([i, '']);
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        ws['!cols'] = [{ wch: 5 }, { wch: 35 }];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Daftar Siswa');
+        const className = classData[currentClass].name.replace(/[^a-z0-9]/gi, '_');
+        XLSX.writeFile(wb, `template-siswa-${className}.xlsx`);
+    }
+
+    function downloadTemplateAll() {
+        if (!checkXLSX()) return;
+        if (classData.length === 0) { alert('Belum ada kelas. Tambahkan kelas terlebih dahulu.'); return; }
+        saveCurrentClassData();
+        const wb = XLSX.utils.book_new();
+        for (let i = 0; i < classData.length; i++) {
+            const wsData = [['No', 'Nama Siswa']];
+            for (let j = 1; j <= totalSiswa; j++) wsData.push([j, '']);
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            ws['!cols'] = [{ wch: 5 }, { wch: 35 }];
+            XLSX.utils.book_append_sheet(wb, ws, classData[i].name.substring(0, 31));
+        }
+        XLSX.writeFile(wb, `template-semua-kelas.xlsx`);
+        alert(`✓ Template ${classData.length} kelas berhasil diunduh.`);
+    }
+
+    function importExcel(event) {
+        if (!checkXLSX()) { event.target.value = ''; return; }
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1, defval: '' });
+                const names = extractNamesFromSheet(rows);
+                if (names.length === 0) { alert('Tidak ada nama siswa yang terdeteksi.'); event.target.value = ''; return; }
+                const className = classData[currentClass].name;
+                if (!confirm(`Kelas: ${className}\nDitemukan: ${names.length} nama siswa\n\nImport akan MENGGANTI nama siswa. Nilai yang sudah ada akan DIPERTAHANKAN.\n\nLanjutkan?`)) {
+                    event.target.value = ''; return;
+                }
+                saveCurrentClassData();
+                const limit = applyNamesToClass(currentClass, names);
+                saveData(); renderClass();
+                alert(`✓ Berhasil import ${limit} nama ke "${className}".`);
+            } catch (err) { alert('Gagal membaca file: ' + err.message); }
+            event.target.value = '';
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function importExcelAll(event) {
+        if (!checkXLSX()) { event.target.value = ''; return; }
+        if (classData.length === 0) { alert('Belum ada kelas. Tambahkan kelas terlebih dahulu.'); event.target.value = ''; return; }
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                pendingWorkbook = XLSX.read(data, { type: 'array' });
+                showMappingModal();
+            } catch (err) { alert('Gagal membaca file: ' + err.message); }
+            event.target.value = '';
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function showMappingModal() {
+        const list = document.getElementById('mappingList');
+        list.innerHTML = '';
+        pendingWorkbook.SheetNames.forEach((sheetName, idx) => {
+            let defaultClass = 0;
+            const lowerSheet = sheetName.toLowerCase().trim();
+            for (let i = 0; i < classData.length; i++) {
+                const lowerClass = classData[i].name.toLowerCase().trim();
+                if (lowerSheet === lowerClass || lowerSheet.includes(lowerClass) || lowerClass.includes(lowerSheet)) {
+                    defaultClass = i; break;
+                }
+            }
+            const row = document.createElement('div');
+            row.className = 'mapping-row';
+            row.innerHTML = `
+                <span class="sheet-name">${esc(sheetName)}</span>
+                <span>→</span>
+                <select data-sheet-idx="${idx}">
+                    ${classData.map((c, i) => `<option value="${i}" ${i === defaultClass ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+                </select>
+            `;
+            list.appendChild(row);
+        });
+        document.getElementById('mappingModal').classList.add('active');
+    }
+
+    function closeMappingModal() {
+        document.getElementById('mappingModal').classList.remove('active');
+        pendingWorkbook = null;
+    }
+
+    function confirmMapping() {
+        if (!pendingWorkbook) return;
+        saveCurrentClassData();
+        const selects = document.querySelectorAll('#mappingList select');
+        const results = [];
+        const usedClasses = new Set();
+        selects.forEach(sel => {
+            const sheetIdx = parseInt(sel.dataset.sheetIdx);
+            const classIdx = parseInt(sel.value);
+            const sheetName = pendingWorkbook.SheetNames[sheetIdx];
+            const sheet = pendingWorkbook.Sheets[sheetName];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            const names = extractNamesFromSheet(rows);
+            results.push({ classIdx, names, sheetName });
+            usedClasses.add(classIdx);
+        });
+        let totalImported = 0;
+        results.forEach(r => {
+            if (r.names.length > 0) totalImported += applyNamesToClass(r.classIdx, r.names);
+        });
+        saveData(); renderClass(); buildTabs(); closeMappingModal();
+        alert(`✓ Import berhasil!\n\nTotal: ${totalImported} nama di ${usedClasses.size} kelas.`);
+    }
+
+    function exportExcel() {
+        if (!checkXLSX()) return;
+        saveCurrentClassData();
+        const data = classData[currentClass];
+        const kktp = parseFloat(document.getElementById('kktp').value);
+        const wsData = [[
+            'No', 'Nama Siswa', 'UH 1', 'UH 2', 'UH 3', 'Rata UH',
+            'Tugas 1', 'Tugas 2', 'Rata Tugas', 'Semester', 'Nilai Akhir', 'KKTP', 'Keterangan'
+        ]];
+        for (let i = 0; i < totalSiswa; i++) {
+            const s = data.students[i] || { name: `Siswa ${i + 1}`, uh: ['','',''], tugas: ['',''], semester: '' };
+            let su = 0, nu = 0, st = 0, nt = 0;
+            s.uh.forEach(v => { if (v !== '') { su += parseFloat(v); nu++; } });
+            s.tugas.forEach(v => { if (v !== '') { st += parseFloat(v); nt++; } });
+            const au = nu ? (su / nu).toFixed(2) : '';
+            const at = nt ? (st / nt).toFixed(2) : '';
+            const sem = s.semester !== '' ? parseFloat(s.semester) : '';
+            const adaNilai = nu > 0 || nt > 0 || s.semester !== '';
+            let na = '', ket = '';
+            if (adaNilai) {
+                const naNum = (parseFloat(au || 0) + parseFloat(at || 0) + parseFloat(sem || 0)) / 3;
+                na = naNum.toFixed(2);
+                ket = naNum < kktp ? 'Belum Tuntas' : 'Tuntas';
+            }
+            wsData.push([i + 1, s.name, s.uh[0], s.uh[1], s.uh[2], au, s.tugas[0], s.tugas[1], at, sem, na, kktp, ket]);
+        }
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        ws['!cols'] = [
+            { wch: 4 }, { wch: 30 }, { wch: 6 }, { wch: 6 }, { wch: 6 }, { wch: 8 },
+            { wch: 7 }, { wch: 7 }, { wch: 9 }, { wch: 8 }, { wch: 10 }, { wch: 6 }, { wch: 13 }
+        ];
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, data.name);
+        const mapel = getMapelNameById(document.getElementById('mapel').value).replace(/[^a-z0-9]/gi, '_') || 'mapel';
+        const className = data.name.replace(/[^a-z0-9]/gi, '_');
+        XLSX.writeFile(wb, `nilai-${mapel}-${className}.xlsx`);
+    }
+
+    // ===== CETAK =====
+    function printCurrentClass() {
+        saveCurrentClassData(); saveData(); syncPrintInfo(); window.print();
+    }
+
+    function printAllClasses() {
+        saveCurrentClassData(); saveData();
+        if (classData.length === 0) { alert('Belum ada kelas untuk dicetak.'); return; }
+        const semester = document.getElementById('semester').value.trim() || '(belum diisi)';
+        const tahun = document.getElementById('tahun').value.trim() || '(belum diisi)';
+        const mapel = getMapelNameById(document.getElementById('mapel').value);
+        const kktp = document.getElementById('kktp').value;
+        const guru = document.getElementById('guru').value;
+
+        let html = `<!DOCTYPE html><html><head><title>Daftar Nilai - SMKN 1 GONDANG</title>
+        <style>
+            body { font-family: Arial, sans-serif; font-size: 10pt; padding: 20px; }
+            .class-section { page-break-after: always; margin-bottom: 25px; }
+            .class-section:last-child { page-break-after: auto; }
+            .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+            .header h1 { font-size: 14pt; margin: 0; letter-spacing: 1px; }
+            .header .sem { font-size: 11pt; font-weight: bold; margin: 3px 0; }
+            .header p { font-size: 10pt; margin: 3px 0; }
+            .info { font-size: 9pt; margin-bottom: 8px; }
+            table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+            th, td { border: 1px solid #000; padding: 3px; text-align: center; }
+            th { background: #f0f0f0; }
+            .nama { text-align: left !important; }
+            .bold { font-weight: bold; }
+            .ket-tuntas { background: #d4edda !important; color: #155724; font-weight: bold; }
+            .ket-belum { background: #f8d7da !important; color: #721c24; font-weight: bold; }
+        </style></head><body>`;
+
+        for (let i = 0; i < classData.length; i++) {
+            const d = classData[i];
+            html += `
+                <div class="class-section">
+                    <div class="header">
+                        <h1>DAFTAR NILAI</h1>
+                        <div class="sem">${esc(semester)}</div>
+                        <p>SMKN 1 GONDANG</p>
+                        <p><strong>Tahun Pelajaran: ${esc(tahun)}</strong></p>
+                    </div>
+                    <div class="info">
+                        <strong>Kelas:</strong> ${esc(d.name)} &nbsp;|&nbsp;
+                        <strong>Mapel:</strong> ${esc(mapel)} &nbsp;|&nbsp;
+                        <strong>KKTP:</strong> ${esc(kktp)} &nbsp;|&nbsp;
+                        <strong>Guru:</strong> ${esc(guru)}
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th rowspan="2">No</th><th rowspan="2">Nama Siswa</th>
+                                <th colspan="3">Ulangan Harian</th><th rowspan="2">Rata UH</th>
+                                <th colspan="2">Tugas</th><th rowspan="2">Rata Tugas</th>
+                                <th rowspan="2">Semester</th><th rowspan="2">Nilai Akhir</th>
+                                <th rowspan="2">Keterangan</th>
+                            </tr>
+                            <tr><th>1</th><th>2</th><th>3</th><th>1</th><th>2</th></tr>
+                        </thead><tbody>`;
+
+            for (let j = 0; j < totalSiswa; j++) {
+                const s = d.students[j] || { name: `Siswa ${j + 1}`, uh: ['','',''], tugas: ['',''], semester: '' };
+                let su = 0, nu = 0, st = 0, nt = 0;
+                s.uh.forEach(v => { if (v !== '') { su += parseFloat(v); nu++; } });
+                s.tugas.forEach(v => { if (v !== '') { st += parseFloat(v); nt++; } });
+                const au = nu ? (su / nu).toFixed(2) : '0.00';
+                const at = nt ? (st / nt).toFixed(2) : '0.00';
+                const sem = s.semester !== '' ? parseFloat(s.semester) : 0;
+                const na = ((parseFloat(au) + parseFloat(at) + sem) / 3).toFixed(2);
+                const adaNilai = nu > 0 || nt > 0 || s.semester !== '';
+                let ketHtml = '-', ketClass = '';
+                if (adaNilai) {
+                    if (parseFloat(na) < parseFloat(kktp)) { ketHtml = 'Belum Tuntas'; ketClass = 'ket-belum'; }
+                    else { ketHtml = 'Tuntas'; ketClass = 'ket-tuntas'; }
+                }
+                html += `<tr>
+                    <td>${j + 1}</td><td class="nama">${esc(s.name)}</td>
+                    <td>${esc(s.uh[0])}</td><td>${esc(s.uh[1])}</td><td>${esc(s.uh[2])}</td>
+                    <td class="bold">${au}</td>
+                    <td>${esc(s.tugas[0])}</td><td>${esc(s.tugas[1])}</td>
+                    <td class="bold">${at}</td><td>${esc(s.semester)}</td>
+                    <td class="bold">${na}</td><td class="${ketClass}">${ketHtml}</td>
+                </tr>`;
+            }
+            html += '</tbody></table></div>';
+        }
+        html += '</body></html>';
+        const w = window.open('', '_blank');
+        w.document.write(html); w.document.close();
+        w.onload = () => w.print();
+    }
+
+    // ===== BACKUP / RESTORE =====
+    function backupData() {
+        saveCurrentClassData(); saveData();
+        const data = {
+            mapel: document.getElementById('mapel').value,
+            kktp: document.getElementById('kktp').value,
+            guru: document.getElementById('guru').value,
+            semester: document.getElementById('semester').value,
+            tahun: document.getElementById('tahun').value,
+            classData: classData,
+            backupDate: new Date().toISOString()
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const sem = (data.semester || 'Semester').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+        const mapel = (getMapelNameById(data.mapel) || 'mapel').toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+        const thn = data.tahun.replace(/[^\d]/g, '') || 'data';
+        a.download = `backup-nilai-${mapel}-${sem}-TP-${thn}.json`;
+        a.click(); URL.revokeObjectURL(a.href);
+        alert('✓ Backup berhasil diunduh.');
+    }
+
+    function restoreData(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        if (!confirm('Restore akan MENGGANTI semua data saat ini. Lanjutkan?')) { event.target.value = ''; return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const p = JSON.parse(e.target.result);
+                if (!Array.isArray(p.classData)) throw new Error('Format file tidak valid');
+                classData = p.classData;
+                if (classData.length === 0) initEmptyData();
+                setMapelValue(p.mapel);
+                setKktpValue(p.kktp ?? 75);
+                document.getElementById('guru').value = p.guru ?? '[Nama Anda, S.Pd.]';
+                document.getElementById('semester').value = p.semester ?? 'Semester Gasal';
+                document.getElementById('tahun').value = p.tahun ?? '';
+                currentClass = 0;
+                saveData(); buildTabs(); renderClass();
+                alert('✓ Data berhasil di-restore.');
+            } catch (err) { alert('✗ Gagal membaca file: ' + err.message); }
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    // ===== RESET =====
+    function showResetModal() {
+        const sel = document.getElementById('newMapelReset');
+        sel.innerHTML = mapelList.map(m =>
+            `<option value="${m.id}">${esc(m.name)}</option>`
+        ).join('');
+        sel.value = document.getElementById('mapel').value;
+        document.getElementById('newKktp').value = document.getElementById('kktp').value;
+        document.getElementById('newSemester').value = document.getElementById('semester').value;
+        document.getElementById('newTahun').value = document.getElementById('tahun').value;
+        document.getElementById('newClassCount').value = classData.length || DEFAULT_CLASS_COUNT;
+        document.getElementById('resetModal').classList.add('active');
+    }
+    function closeResetModal() { document.getElementById('resetModal').classList.remove('active'); }
+
+    function resetAllData() {
+        if (prompt('Ketik "RESET" (huruf kapital) untuk konfirmasi:') !== 'RESET') {
+            alert('Reset dibatalkan.'); closeResetModal(); return;
+        }
+        const newMapel = document.getElementById('newMapelReset').value;
+        const newKktp = document.getElementById('newKktp').value;
+        const newSem = document.getElementById('newSemester').value.trim();
+        const newTahun = document.getElementById('newTahun').value.trim();
+        const newClassCount = parseInt(document.getElementById('newClassCount').value) || DEFAULT_CLASS_COUNT;
+
+        initEmptyData(Math.max(1, Math.min(50, newClassCount)));
+        document.getElementById('mapel').value = newMapel;
+        setKktpValue(newKktp);
+        document.getElementById('guru').value = '[Nama Anda, S.Pd.]';
+        if (newSem) document.getElementById('semester').value = newSem;
+        if (newTahun) document.getElementById('tahun').value = newTahun;
+
+        currentClass = 0;
+        saveData(); buildTabs(); renderClass();
+        closeResetModal();
+        alert('✓ Data berhasil direset untuk periode baru.');
+    }
+
+    // ===== INIT =====
+    loadMapelList();
+    renderMapelDropdown();
+    loadData();
+    buildTabs();
+    renderClass();
+
+    window.addEventListener('beforeunload', () => { saveCurrentClassData(); saveData(); });
+</script>
+</body>
+</html>
